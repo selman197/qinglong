@@ -1,0 +1,12 @@
+name: Build and Push Docker images
+
+on:
+push:
+branches: [ "main" ]
+workflow_dispatch:
+
+env:
+REGISTRY: docker.io
+USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+IMAGE_A: chrome-runner
+IMAGE_B: qinglong-ubuntu
