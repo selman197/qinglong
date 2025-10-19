@@ -10,3 +10,32 @@ REGISTRY: docker.io
 USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 IMAGE_A: chrome-runner
 IMAGE_B: qinglong-ubuntu
+
+jobs:
+build-push:
+runs-on: ubuntu-latest
+steps:
+- name: Checkout
+uses: actions/checkout@v4
+
+- name: Login to DockerHub
+uses: docker/login-action@v3
+with:
+username: ${{ secrets.DOCKERHUB_USERNAME }}
+password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+- name: Build & Push A (chrome-runner)
+uses: docker/build-push-action@v6
+with:
+context: .
+file: Dockerfile.chrome
+push: true
+tags: ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_A }}:latest
+
+- name: Build & Push B (qinglong-ubuntu)
+uses: docker/build-push-action@v6
+with:
+context: .
+file: Dockerfile.qinglong
+push: true
+tags: ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_B }}:latest
