@@ -1,0 +1,78 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+TZ=Asia/Shanghai
+LANG=C.UTF-8
+LC_ALL=C.UTF-8
+CHROME_FOR_TESTING_VERSION=141.0.7390.78
+
+#基础依赖、Chrome 依赖、OCR、noVNC 桌面组件与字体
+RUN apt-get update && apt-get install -y --no-install-recommends
+ca-certificates curl wget unzip gnupg xdg-utils
+# Chrome 运行依赖
+libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1
+libxcomposite1 libxcursor1 libxdamage1 libxfixes3 libxi6 libxtst6
+libglib2.0-0 libpango-1.0-0 libpangocairo-1.0-0
+# Python & OCR
+python3 python3-pip tesseract-ocr
+# 桌面与 VNC
+tigervnc-standalone-server openbox novnc websockify x11-xserver-utils
+# 字体
+fonts-noto-cjk fonts-liberation fonts-noto-color-emoji
+&& rm -rf /var/lib/apt/lists/*
+
+#安装 Chrome（for-testing，与 Chromedriver 版本需匹配）
+RUN wget -q -O /tmp/chrome-linux64.zip
+https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_FOR_TESTING_VERSION}/linux64/chrome-linux64.zip
+&& unzip -q /tmp/chrome-linux64.zip -d /opt/
+&& ln -sf /opt/chrome-linux64/google-chrome /usr/bin/google-chrome
+&& rm /tmp/chrome-linux64.zip
+
+安装 Chromedriver（匹配 CHROME_FOR_TESTING_VERSION）
+RUN wget -q -O /tmp/chromedriver-linux64.zip
+https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_FOR_TESTING_VERSION}/linux64/chromedriver-linux64.zip
+&& unzip -q /tmp/chromedriver-linux64.zip -d /tmp/
+&& mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+&& chmod +x /usr/local/bin/chromedriver
+&& rm -rf /tmp/chromedriver-linux64 /tmp/chromedriver-linux64.zip
+
+Python 依赖
+RUN pip3 install --no-cache-dir selenium pytesseract Pillow requests
+
+非 root 用户与数据目录
+RUN useradd -m -s /bin/bash chrome &&
+mkdir -p /data/profile /data/output &&
+chown -R chrome:chrome /data
+
+环境变量（支持 noVNC 桌面模式 与 脚本模式）
+ENV DISPLAY=:1
+GEOMETRY=1360x768
+NOVNC_PORT=6080
+VNC_PASSWORD=changeme
+MODE=script
+START_URL=
+WECHAT_WEBHOOK=
+
+WORKDIR /app
+
+注意：需在构建上下文中提供 entrypoint.sh 和 main.py
+COPY entrypoint.sh /app/entrypoint.sh
+COPY main.py /app/main.py
+RUN chmod +x /app/entrypoint.sh
+
+暴露端口（noVNC / VNC / 可选 Chrome 远程调试）
+EXPOSE 6080 5901 9222
+
+挂载（持久化用户数据与输出截图）
+VOLUME ["/data/profile", "/data/output"]
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+
+
+
+
+
+
+
+
