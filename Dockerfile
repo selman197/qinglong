@@ -30,7 +30,7 @@ RUN wget -O /tmp/chromedriver-linux64.zip https://edgedl.me.gvt1.com/edgedl/chro
     && rm -rf /tmp/chromedriver-linux64 /tmp/chromedriver-linux64.zip \
     && chmod +x /usr/local/bin/chromedriver
 
-# Python 依赖
+# Python依赖
 RUN pip3 install --no-cache-dir --upgrade pip \
     && pip3 install --no-cache-dir \
        selenium requests pyppeteer cloudscraper \
@@ -42,13 +42,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && npm install -g npm@latest selenium-webdriver axios puppeteer lodash moment \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装青龙面板
+# 克隆并安装青龙依赖（替代 install.sh）
 WORKDIR /ql
 RUN git clone --depth=1 https://github.com/whyour/qinglong.git . \
-    && bash scripts/install.sh
+    && curl -fsSL https://ghproxy.com/https://raw.githubusercontent.com/shufflewzc/QLDependency/main/Shell/QLOneKeyDependency.sh | bash
 
 # 环境变量
-ENV CHROME_PATH=/usr/bin/google-chrome CHROMEDRIVER_PATH=/usr/local/bin/chromedriver PATH=$PATH:/usr/local/bin
+ENV CHROME_PATH=/usr/bin/google-chrome \
+    CHROMEDRIVER_PATH=/usr/local/bin/chromedriver \
+    PATH=$PATH:/usr/local/bin
 
 EXPOSE 5700
 ENTRYPOINT ["/bin/bash", "/ql/docker/docker-entrypoint.sh"]
